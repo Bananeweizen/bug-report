@@ -1,6 +1,8 @@
 # manually triggered workflow for reproducing a Checkstyle bug
+# open issues:
+# * Workflow input is single line only. Would need to have a small website to take the input and then trigger the REST API of the workflow.
 
-name: Bug Reproduction
+name: Reproduce Checkstyle bug
 
 on:
   workflow_dispatch:
@@ -20,29 +22,30 @@ on:
         default: |
           public class Bug {
             final public someMethod() {
-              // empty
             }
           }
         required: true
         type: string
 
 jobs:
-  reproduce:
+  reproduce-bug:
     runs-on: ubuntu-latest
 
     steps:
     - name: Store Java file
-      uses: 1arp/create-a-file-action@0.2
-      with:
-        path: 'input'
-        file: 'Bug.java'
-        content: ${{ inputs.java }}
+      env:
+        JAVA_FILE: ${{inputs.java}}
+      shell: bash
+      run: |
+          echo "$JAVA_FILE" >> Bug.java
+          cat Bug.java
     - name: Store config file
-      uses: 1arp/create-a-file-action@0.2
-      with:
-        path: 'input'
-        file: 'config.xml'
-        content: ${{ inputs.config }}
+      env:
+        JAVA_FILE: ${{inputs.config}}
+      shell: bash
+      run: |
+          echo "$CONFIG_FILE" >> config.xml
+          cat config.xml
     - name: Download Checkstyle
       run: curl https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.3/checkstyle-10.12.3-all.jar -o checkstyle-all.jar
     - name: Set up JDK 11 for x64
@@ -51,4 +54,4 @@ jobs:
         java-version: '11'
         distribution: 'temurin'
     - name: Run Checkstyle
-      run: java -Duser.language=en -Duser.country=US -jar checkstyle-all.jar -c input/config.xml input/Bug.java
+      run: java -Duser.language=en -Duser.country=US -jar checkstyle-all.jar -c config.xml Bug.java
